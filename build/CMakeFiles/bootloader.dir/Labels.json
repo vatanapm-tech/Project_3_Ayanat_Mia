@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/CMakeFiles/bootloader"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/CMakeFiles/bootloader.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/CMakeFiles/bootloader-complete.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
+		},
+		{
+			"file" : "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"bootloader"
+		],
+		"name" : "bootloader"
+	}
+}
