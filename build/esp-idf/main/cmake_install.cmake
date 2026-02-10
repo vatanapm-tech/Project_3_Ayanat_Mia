@@ -1,4 +1,4 @@
-# Install script for directory: /Users/miavatanapradit/Downloads/LCD_display_starter_code-main/main
+# Install script for directory: /Users/miavatanapradit/esp/Project_3_Ayanat_Mia/main
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,6 +40,6 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/esp-idf/main/install_local_manifest.txt"
+  file(WRITE "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/esp-idf/main/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

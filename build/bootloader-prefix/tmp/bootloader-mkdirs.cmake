@@ -10,18 +10,18 @@ if(NOT EXISTS "/Users/miavatanapradit/esp/esp-idf/components/bootloader/subproje
   file(MAKE_DIRECTORY "/Users/miavatanapradit/esp/esp-idf/components/bootloader/subproject")
 endif()
 file(MAKE_DIRECTORY
-  "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader"
-  "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix"
-  "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/tmp"
-  "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp"
-  "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src"
-  "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp"
+  "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader"
+  "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix"
+  "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/tmp"
+  "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp"
+  "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src"
+  "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp"
 )
 
 set(configSubDirs )
 foreach(subDir IN LISTS configSubDirs)
-    file(MAKE_DIRECTORY "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
+    file(MAKE_DIRECTORY "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
 endforeach()
 if(cfgdir)
-  file(MAKE_DIRECTORY "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
+  file(MAKE_DIRECTORY "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
 endif()

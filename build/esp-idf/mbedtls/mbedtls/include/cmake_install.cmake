@@ -70,6 +70,6 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/esp-idf/mbedtls/mbedtls/include/install_local_manifest.txt"
+  file(WRITE "/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/esp-idf/mbedtls/mbedtls/include/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

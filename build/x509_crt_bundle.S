@@ -1,4 +1,4 @@
-/* * Data converted from /Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from /Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 #if !defined (__APPLE__) && !defined (__linux__)

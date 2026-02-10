@@ -5,7 +5,7 @@
 #include <esp_idf_lib_helpers.h>
 #include <inttypes.h>
 #include <stdio.h>
-#include "freertos/FreeRTOS.h"
+// #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 #include "stdio.h"
@@ -34,20 +34,8 @@ int executed = 0;       // Keep track of print statements
 int ready_led = 0;      // Keep track of whether ready_led should be on or off
 int ignition_off = 0;   // Keep track of whether the ignition can be turned off
 
-static uint32_t get_time_sec()
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec;
-}
 
-static const uint8_t char_data[] =
-{
-    0x04, 0x0e, 0x0e, 0x0e, 0x1f, 0x00, 0x04, 0x00,
-    0x1f, 0x11, 0x0a, 0x04, 0x0a, 0x11, 0x1f, 0x00
-};
-
-void lcd_test(void *pvParameters)
+void lcd_run(void *pvParameters)
 {
     hd44780_t lcd =
     {
@@ -67,32 +55,20 @@ void lcd_test(void *pvParameters)
 
     ESP_ERROR_CHECK(hd44780_init(&lcd));
 
-    hd44780_upload_character(&lcd, 0, char_data);
-    hd44780_upload_character(&lcd, 1, char_data + 8);
-
     hd44780_gotoxy(&lcd, 0, 0);
-    hd44780_puts(&lcd, "\x08 Hello, World!");
+    hd44780_puts(&lcd, "Hi");
     hd44780_gotoxy(&lcd, 0, 1);
-    hd44780_puts(&lcd, "\x09 ");
-
-    char time[16];
+    hd44780_puts(&lcd, "There");
 
     while (1)
     {
-        hd44780_gotoxy(&lcd, 2, 1);
-
-        snprintf(time, 7, "%" PRIu32 "  ", get_time_sec());
-        time[sizeof(time) - 1] = 0;
-
-        hd44780_puts(&lcd, time);
-
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 void app_main(void)
 {
-    xTaskCreate(lcd_test, "lcd_test", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    xTaskCreate(lcd_run, "lcd_run", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
 
     // set driver seat pin config to input and internal pullup
     gpio_reset_pin(DSEAT_PIN);

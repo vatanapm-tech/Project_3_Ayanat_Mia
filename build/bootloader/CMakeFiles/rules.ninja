@@ -527,7 +527,7 @@ rule C_STATIC_LIBRARY_LINKER____idf_main_
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /opt/homebrew/bin/cmake --regenerate-during-build -S/Users/miavatanapradit/esp/esp-idf/components/bootloader/subproject -B/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader
+  command = /opt/homebrew/bin/cmake --regenerate-during-build -S/Users/miavatanapradit/esp/esp-idf/components/bootloader/subproject -B/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader
   description = Re-running CMake...
   generator = 1
 

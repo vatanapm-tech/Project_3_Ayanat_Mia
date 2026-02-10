@@ -1,6 +1,6 @@
 /* Automatically generated file; DO NOT EDIT */
 /* Espressif IoT Development Framework Linker Script */
-/* Generated from: /Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/esp-idf/esp_system/ld/sections.ld.in */
+/* Generated from: /Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/esp-idf/esp_system/ld/sections.ld.in */
 
 /*
  * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD

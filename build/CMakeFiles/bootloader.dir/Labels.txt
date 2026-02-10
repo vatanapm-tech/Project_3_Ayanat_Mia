@@ -1,13 +1,13 @@
 # Target labels
  bootloader
 # Source files and their labels
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/CMakeFiles/bootloader
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/CMakeFiles/bootloader.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/CMakeFiles/bootloader-complete.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
-/Users/miavatanapradit/Downloads/LCD_display_starter_code-main/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/CMakeFiles/bootloader
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/CMakeFiles/bootloader.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/CMakeFiles/bootloader-complete.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
