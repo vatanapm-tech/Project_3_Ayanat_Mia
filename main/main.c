@@ -5,7 +5,6 @@
 #include <esp_idf_lib_helpers.h>
 #include <inttypes.h>
 #include <stdio.h>
-// #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 #include "stdio.h"
@@ -23,6 +22,8 @@
 #define ALARM_PIN         GPIO_NUM_12      // alarm pin 12
 #define ADC_ATTEN         ADC_ATTEN_DB_12  // set ADC attenuation
 #define BITWIDTH          ADC_BITWIDTH_12  // set ADC bitwidth
+#define DELAY_MS          1000             // delay in milliseconds
+#define DELAY2_MS         2000             // delay in milliseconds
 
 
 bool dseat = false;     // Detects when the driver is seated 
@@ -33,9 +34,10 @@ bool ignition = false;  // Detects when the ignition is turned on
 int executed = 0;       // Keep track of print statements
 int ready_led = 0;      // Keep track of whether ready_led should be on or off
 int ignition_off = 0;   // Keep track of whether the ignition can be turned off
+int task = 0;           // Keep track of which LCD message to print
 
 
-void lcd_run(void *pvParameters)
+void lcd_task(void *pvParameters)
 {
     hd44780_t lcd =
     {
@@ -55,10 +57,58 @@ void lcd_run(void *pvParameters)
 
     ESP_ERROR_CHECK(hd44780_init(&lcd));
 
-    hd44780_gotoxy(&lcd, 0, 0);
-    hd44780_puts(&lcd, "Hi");
-    hd44780_gotoxy(&lcd, 0, 1);
-    hd44780_puts(&lcd, "There");
+    if (task == 0){
+        hd44780_clear(&lcd);
+    }
+
+    if (task == 1){
+        hd44780_gotoxy(&lcd, 0, 0);
+        hd44780_puts(&lcd, "Welcome to car");
+        hd44780_gotoxy(&lcd, 0, 1);
+        hd44780_puts(&lcd, "alarm system!");
+    }
+
+    if (task == 2){
+        hd44780_gotoxy(&lcd, 0, 0);
+        hd44780_puts(&lcd, "Engine started!");
+    }
+
+    if (task == 3){
+        hd44780_gotoxy(&lcd, 0, 0);
+        hd44780_puts(&lcd, "Ignition");
+        hd44780_gotoxy(&lcd, 0, 1);
+        hd44780_puts(&lcd, "Inhibited!");
+        vTaskDelay(DELAY2_MS / portTICK_PERIOD_MS);
+
+        if (!pseat){
+            hd44780_gotoxy(&lcd, 0, 0);
+            hd44780_puts(&lcd, "Passenger seat");
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "not occupied.");
+            vTaskDelay(DELAY2_MS / portTICK_PERIOD_MS);
+        }
+        if (!dseat){
+            hd44780_gotoxy(&lcd, 0, 0);
+            hd44780_puts(&lcd, "Driver seat");
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "not occupied.");
+            vTaskDelay(DELAY2_MS / portTICK_PERIOD_MS);
+        }
+        if (!pbelt){
+            hd44780_gotoxy(&lcd, 0, 0);
+            hd44780_puts(&lcd, "Pass. seatbelt");
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "not fastened.");
+            vTaskDelay(DELAY2_MS / portTICK_PERIOD_MS);
+        }
+        if (!dbelt){
+            hd44780_gotoxy(&lcd, 0, 0);
+            hd44780_puts(&lcd, "Driver seatbelt");
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "not fastened.");
+            vTaskDelay(DELAY2_MS / portTICK_PERIOD_MS);
+        }
+    }
 
     while (1)
     {
@@ -68,8 +118,6 @@ void lcd_run(void *pvParameters)
 
 void app_main(void)
 {
-    xTaskCreate(lcd_run, "lcd_run", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-
     // set driver seat pin config to input and internal pullup
     gpio_reset_pin(DSEAT_PIN);
     gpio_set_direction(DSEAT_PIN, GPIO_MODE_INPUT);
@@ -123,6 +171,8 @@ void app_main(void)
         if (dseat){
             if (executed == 0){     // if executed equals 0, print welcome message
                 printf("Welcome to enhanced alarm system model 218-W25 \n"); 
+                task = 1;
+                xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
                 executed = 1;       // set executed = 1 so welcome message only prints once
             }
         }
@@ -142,6 +192,8 @@ void app_main(void)
                 gpio_set_level(ALARM_PIN, 0);
                 // print engine started message once
                 printf("Engine started!\n");
+                task = 2;
+                xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
                 executed = 2;       // set executed = 2 so engine started message only prints once
             }
         }
@@ -169,8 +221,9 @@ void app_main(void)
                     if (!dbelt){
                         printf("Drivers seatbelt not fastened.\n");
                     }
+                    task = 3;
+                    xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
                     executed = 4;
-                
             }
         }
 
@@ -188,6 +241,8 @@ void app_main(void)
         if (ignition_off==1 && ignition == true){
             gpio_set_level(SUCCESS_LED,0);          // turn off ignition LED
             executed = 3;                           // set executed = 3 to keep LEDs off
+            task = 0;                               // set task = 0 to clear LCD
+            xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
         }
     }
 }
