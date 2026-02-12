@@ -35,6 +35,7 @@ int executed = 0;       // Keep track of print statements
 int ready_led = 0;      // Keep track of whether ready_led should be on or off
 int ignition_off = 0;   // Keep track of whether the ignition can be turned off
 int task = 0;           // Keep track of which LCD message to print
+int error = 0;          // Keep track of error state
 
 
 void lcd_task(void *pvParameters)
