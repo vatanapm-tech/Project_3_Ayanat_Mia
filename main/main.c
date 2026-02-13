@@ -24,7 +24,23 @@
 #define BITWIDTH          ADC_BITWIDTH_12  // set ADC bitwidth
 #define DELAY_MS          1000             // delay in milliseconds
 #define DELAY2_MS         2000             // delay in milliseconds
-
+#define LEDC_TIMER        LEDC_TIMER_0
+#define LEDC_MODE         LEDC_LOW_SPEED_MODE
+#define LEDC_OUTPUT_IO    9
+#define LEDC_CHANNEL      LEDC_CHANNEL_0
+#define LEDC_DUTY_RES     LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
+//PWM signal frequency required by servo motor
+#define LEDC_FREQUENCY    50 // Frequency in Hertz. 50 Hz for a 20ms period.
+//minimum and maximum servo pulse widths
+#define LEDC_DUTY_MIN     220 // Set duty to 2.7% (0 deg angle position)
+#define LEDC_DUTY_MAX     590 // Set duty to 7.2% to achieve an angle of 90% (max)
+//step sized to change how fast the servo motor rotates
+#define STEP_HIGH_SPEED   6.1 //speed fast -- 90 deg in 0.6 sec
+#define STEP_LOW_SPEED    2.46 //speed slow -- 90 deg in 1.5 sec
+#define MODE_SELECTOR     ADC_CHANNEL_4 //MUST BE ADC CHANNEL -- need to CHANGE!!!
+#define DELAY_TIME_SELECTOR     ADC_CHANNEL_3 //MUST BE ADC CHANNEL -- need to CHANGE!!!
+#define ADC_ATTEN       ADC_ATTEN_DB_12
+#define BITWIDTH        ADC_BITWIDTH_12
 
 bool dseat = false;     // Detects when the driver is seated 
 bool pseat = false;     // Detects when the passenger is seated
@@ -36,7 +52,11 @@ int ready_led = 0;      // Keep track of whether ready_led should be on or off
 int ignition_off = 0;   // Keep track of whether the ignition can be turned off
 int task = 0;           // Keep track of which LCD message to print
 int error = 0;          // Keep track of error state
+int OFF = 1024;         // WindowWiper Subsystem mode OFF threshold
+int INT = 2048;         // WindowWiper Subsystem mode INT threshold
+int LOW = 3072;         // WindowWiper Subsystem mode LOW threshold
 
+static void ledc_init(void);
 
 void lcd_task(void *pvParameters)
 {
@@ -111,6 +131,25 @@ void lcd_task(void *pvParameters)
         }
     }
 
+    if (task == 4){
+        hd44780_gotoxy(&lcd, 0, 0);
+        hd44780_puts(&lcd, "Wiper mode:");
+        if (modeSel_adc_bits<OFF) {          //0-1023
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "OFF");
+        } else if (modeSel_adc_bits<INT) {   //1024-2047
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "INT");
+        } else if (modeSel_adc_bits<LOW) {   //2048-3071
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "LOW");
+        } else {                             //3072-4095
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "HIGH");
+        }
+        vTaskDelay(DELAY_MS / portTICK_PERIOD_MS);
+    }
+
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -155,6 +194,29 @@ void app_main(void)
     // set alarm pin config to output, level 0
     gpio_reset_pin(ALARM_PIN);
     gpio_set_direction(ALARM_PIN, GPIO_MODE_OUTPUT);
+
+    // Set the LEDC peripheral configuration
+    example_ledc_init();
+    // Set duty to 3.75% (0 degrees) & Update duty
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY_MIN);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+
+    // Initalize ADC
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+        .unit_id = ADC_UNIT_1,
+    };                                                  // Unit configuration
+    adc_oneshot_unit_handle_t adc1_handle;              // Unit handle
+    adc_oneshot_new_unit(&init_config1, &adc1_handle);  // Populate unit handle
+
+    adc_oneshot_chan_cfg_t chan_config = {
+        .atten = ADC_ATTEN,
+        .bitwidth = BITWIDTH
+    };
+    adc_oneshot_config_channel(adc1_handle, MODE_SELECTOR, &chan_config);     // Configure the chan
+    adc_oneshot_config_channel(adc1_handle, DELAY_TIME_SELECTOR, &chan_config);     // Configure the chan
+
+    int modeSel_adc_bits;                                   // ADC reading (bits)
+    int delayTimeSel_adc_bits;                               // ADC reading (bits)
 
     while (1){
 
@@ -245,5 +307,105 @@ void app_main(void)
             task = 0;                               // set task = 0 to clear LCD
             xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
         }
+
+        //WINDOW WIPER CONTROL
+        adc_oneshot_read(adc1_handle, MODE_SELECTOR, &modeSel_adc_bits);    // Read ADC bits
+        adc_oneshot_read(adc1_handle, DELAY_TIME_SELECTOR, &delayTimeSel_adc_bits);    // Read ADC bits
+        int INTtimeDelay;
+
+        //determine the delay time selected by driver -- NEEDS IMPROVEMENT!
+        if (delayTimeSel_adc_bits<1365) {           //0-1364
+            //1 sec
+            INTtimeDelay=1000;
+        } else if (delayTimeSel_adc_bits<2730) {    //1365-2729
+            //3sec
+            INTtimeDelay=3000;
+        } else {                                    //2730-4095
+            //5sec
+            INTtimeDelay=5000;
+        task = 4;
+        xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+        }
+
+        // read from Mode Selector potentiometer & determine the selected mode
+        if (modeSel_adc_bits<OFF) {                     //0-1023
+            // MODE SELECTED: OFF
+            // printf("OFF\n");
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
+            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+        } else if (modeSel_adc_bits<INT) {              //1024-2047
+            // MODE SELECTED: INT
+            // printf("INT\n");
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
+            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+            vTaskDelay(pdMS_TO_TICKS(INTtimeDelay));
+
+            //go from 0 to 90 in LOW SPEED
+            for (float i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);    
+            }
+            // go from 90 to 0 in LOW SPEED
+            for (float i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);
+            }
+        } else if (modeSel_adc_bits<LOW) {              //2048-3071
+            // MODE SELECTED: LOW
+            //go from 0 to 90 in LOW SPEED
+            for (float i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);    
+            }
+            // go from 90 to 0 in LOW SPEED
+            for (float i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);
+            }
+        } else {                                        //3072-4095
+            // MODE SELECTED: HIGH
+            // printf("HIGH\n");
+            //go from 0 to 90 in HIGH SPEED
+            for (float i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_HIGH_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);    
+            }
+            // go from 90 to 0 in HIGH SPEED
+            for (float i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_HIGH_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);
+            }
+        }
     }
+}
+
+static void ledc_init(void)
+{
+    // Prepare and then apply the LEDC PWM timer configuration
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_MODE,
+        .duty_resolution  = LEDC_DUTY_RES,
+        .timer_num        = LEDC_TIMER,
+        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 50 Hz
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+    // Prepare and then apply the LEDC PWM channel configuration
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_MODE,
+        .channel        = LEDC_CHANNEL,
+        .timer_sel      = LEDC_TIMER,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = LEDC_OUTPUT_IO,
+        .duty           = 0, // Set initial duty to 0%
+        .hpoint         = 0
+    };
+    ledc_channel_config(&ledc_channel);
 }
