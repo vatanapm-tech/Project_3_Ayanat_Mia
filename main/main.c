@@ -24,7 +24,19 @@
 #define BITWIDTH          ADC_BITWIDTH_12  // set ADC bitwidth
 #define DELAY_MS          1000             // delay in milliseconds
 #define DELAY2_MS         2000             // delay in milliseconds
-
+#define LEDC_TIMER        LEDC_TIMER_0
+#define LEDC_MODE         LEDC_LOW_SPEED_MODE
+#define LEDC_OUTPUT_IO    9
+#define LEDC_CHANNEL      LEDC_CHANNEL_0
+#define LEDC_DUTY_RES     LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
+//PWM signal frequency required by servo motor
+#define LEDC_FREQUENCY    50 // Frequency in Hertz. 50 Hz for a 20ms period.
+//minimum and maximum servo pulse widths
+#define LEDC_DUTY_MIN     220 // Set duty to 2.7% (0 deg angle position)
+#define LEDC_DUTY_MAX     590 // Set duty to 7.2% to achieve an angle of 90% (max)
+//step sized to change how fast the servo motor rotates
+#define STEP_HIGH_SPEED   6.1 //speed fast -- 90 deg in 0.6 sec
+#define STEP_LOW_SPEED    2.46 //speed slow -- 90 deg in 1.5 sec
 
 bool dseat = false;     // Detects when the driver is seated 
 bool pseat = false;     // Detects when the passenger is seated
@@ -37,6 +49,7 @@ int ignition_off = 0;   // Keep track of whether the ignition can be turned off
 int task = 0;           // Keep track of which LCD message to print
 int error = 0;          // Keep track of error state
 
+static void ledc_init(void);
 
 void lcd_task(void *pvParameters)
 {
@@ -156,6 +169,12 @@ void app_main(void)
     gpio_reset_pin(ALARM_PIN);
     gpio_set_direction(ALARM_PIN, GPIO_MODE_OUTPUT);
 
+    // Set the LEDC peripheral configuration
+    example_ledc_init();
+    // Set duty to 3.75% (0 degrees) & Update duty
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY_MIN);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+
     while (1){
 
         // Task Delay to prevent watchdog
@@ -245,5 +264,49 @@ void app_main(void)
             task = 0;                               // set task = 0 to clear LCD
             xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
         }
+
+        /*
+        //go from 0 to 90 in STEP_SPEED
+        for (int i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_HIGH_SPEED) {
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+            vTaskDelay(10 /portTICK_PERIOD_MS);    
+        }
+        
+        // vTaskDelay(1000 /portTICK_PERIOD_MS);    
+
+        // go from 90 to 0 in STEP_SPEED
+        for (int i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_HIGH_SPEED) {
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+            vTaskDelay(10 /portTICK_PERIOD_MS);
+        }
+        */
+
     }
+}
+
+static void ledc_init(void)
+{
+    // Prepare and then apply the LEDC PWM timer configuration
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_MODE,
+        .duty_resolution  = LEDC_DUTY_RES,
+        .timer_num        = LEDC_TIMER,
+        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 50 Hz
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+    // Prepare and then apply the LEDC PWM channel configuration
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_MODE,
+        .channel        = LEDC_CHANNEL,
+        .timer_sel      = LEDC_TIMER,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = LEDC_OUTPUT_IO,
+        .duty           = 0, // Set initial duty to 0%
+        .hpoint         = 0
+    };
+    ledc_channel_config(&ledc_channel);
 }
