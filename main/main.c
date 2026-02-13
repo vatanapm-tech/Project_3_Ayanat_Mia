@@ -48,6 +48,9 @@ int ready_led = 0;      // Keep track of whether ready_led should be on or off
 int ignition_off = 0;   // Keep track of whether the ignition can be turned off
 int task = 0;           // Keep track of which LCD message to print
 int error = 0;          // Keep track of error state
+int OFF = 1024;         // WindowWiper Subsystem mode OFF threshold
+int INT = 2048;         // WindowWiper Subsystem mode INT threshold
+int LOW = 3072;         // WindowWiper Subsystem mode LOW threshold
 
 static void ledc_init(void);
 
@@ -175,6 +178,21 @@ void app_main(void)
     ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY_MIN);
     ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 
+    // Initalize ADC
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+        .unit_id = ADC_UNIT_1,
+    };                                                  // Unit configuration
+    adc_oneshot_unit_handle_t adc1_handle;              // Unit handle
+    adc_oneshot_new_unit(&init_config1, &adc1_handle);  // Populate unit handle
+
+    adc_oneshot_chan_cfg_t chan_config = {
+        .atten = ADC_ATTEN,
+        .bitwidth = BITWIDTH
+    };
+    adc_oneshot_config_channel(adc1_handle, MODE_SELECTOR, &chan_config);     // Configure the chan
+
+    int modeSel_adc_bits;                                   // ADC reading (bits)
+
     while (1){
 
         // Task Delay to prevent watchdog
@@ -186,6 +204,8 @@ void app_main(void)
         dbelt = gpio_get_level(DBELT_PIN)==0;
         pbelt = gpio_get_level(PBELT_PIN)==0;
         ignition = gpio_get_level(IGNITION_BUTTON)==0;
+
+
 
         // if the driver seat button is pressed, print the welcome message once
         if (dseat){
@@ -265,24 +285,63 @@ void app_main(void)
             xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
         }
 
-        /*
-        //go from 0 to 90 in STEP_SPEED
-        for (int i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_HIGH_SPEED) {
-            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
-            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-            vTaskDelay(10 /portTICK_PERIOD_MS);    
-        }
-        
-        // vTaskDelay(1000 /portTICK_PERIOD_MS);    
+        //WINDOW WIPER CONTROL
+        adc_oneshot_read(adc1_handle, MODE_SELECTOR, &modeSel_adc_bits);    // Read ADC bits
 
-        // go from 90 to 0 in STEP_SPEED
-        for (int i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_HIGH_SPEED) {
-            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+        // read from Mode Selector potentiometer & determine the selected mode
+        if (modeSel_adc_bits<OFF) {     //0-1023
+            // MODE SELECTED: OFF
+            // printf("OFF\n");
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
             ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-            vTaskDelay(10 /portTICK_PERIOD_MS);
+        } else if (modeSel_adc_bits<INT) {      //1024-2047
+            // MODE SELECTED: INT
+            // printf("INT\n");
+            //go from 0 to 90 in LOW SPEED
+            for (float i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);    
+            }
+            // go from 90 to 0 in LOW SPEED
+            for (float i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);
+            }
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
+            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+            vTaskDelay(1000 /portTICK_PERIOD_MS); //user selected value
+        } else if (modeSel_adc_bits<LOW) {      //2048-3071
+            // MODE SELECTED: LOW
+            //go from 0 to 90 in LOW SPEED
+            for (float i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);    
+            }
+            // go from 90 to 0 in LOW SPEED
+            for (float i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_LOW_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);
+            }
+        } else {                        //3072-4095
+            // MODE SELECTED: HIGH
+            // printf("HIGH\n");
+            //go from 0 to 90 in HIGH SPEED
+            for (float i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_HIGH_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);    
+            }
+            // go from 90 to 0 in HIGH SPEED
+            for (float i=LEDC_DUTY_MAX; i>=LEDC_DUTY_MIN; i-=STEP_HIGH_SPEED) {
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                vTaskDelay(10 /portTICK_PERIOD_MS);
+            }
         }
-        */
-
     }
 }
 
