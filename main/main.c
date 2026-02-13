@@ -38,6 +38,7 @@
 #define STEP_HIGH_SPEED   6.1 //speed fast -- 90 deg in 0.6 sec
 #define STEP_LOW_SPEED    2.46 //speed slow -- 90 deg in 1.5 sec
 #define MODE_SELECTOR     ADC_CHANNEL_4 //MUST BE ADC CHANNEL -- need to CHANGE!!!
+#define DELAY_TIME_SELECTOR     ADC_CHANNEL_3 //MUST BE ADC CHANNEL -- need to CHANGE!!!
 #define ADC_ATTEN       ADC_ATTEN_DB_12
 #define BITWIDTH        ADC_BITWIDTH_12
 
@@ -193,8 +194,10 @@ void app_main(void)
         .bitwidth = BITWIDTH
     };
     adc_oneshot_config_channel(adc1_handle, MODE_SELECTOR, &chan_config);     // Configure the chan
+    adc_oneshot_config_channel(adc1_handle, DELAY_TIME_SELECTOR, &chan_config);     // Configure the chan
 
     int modeSel_adc_bits;                                   // ADC reading (bits)
+    int delayTimeSel_adc_bits;                               // ADC reading (bits)
 
     while (1){
 
@@ -290,6 +293,20 @@ void app_main(void)
 
         //WINDOW WIPER CONTROL
         adc_oneshot_read(adc1_handle, MODE_SELECTOR, &modeSel_adc_bits);    // Read ADC bits
+        adc_oneshot_read(adc1_handle, DELAY_TIME_SELECTOR, &delayTimeSel_adc_bits);    // Read ADC bits
+        int INTtimeDelay;
+
+        //determine the delay time selected by driver -- NEEDS IMPROVEMENT!
+        if (delayTimeSel_adc_bits<1365) { //0-1364
+            //1 sec
+            INTtimeDelay=1000;
+        } else if (delayTimeSel_adc_bits<2730) {    //1365-2729
+            //3sec
+            INTtimeDelay=3000;
+        } else {    //2730-4095
+            //5sec
+            INTtimeDelay=5000;
+        }
 
         // read from Mode Selector potentiometer & determine the selected mode
         if (modeSel_adc_bits<OFF) {     //0-1023
@@ -300,6 +317,9 @@ void app_main(void)
         } else if (modeSel_adc_bits<INT) {      //1024-2047
             // MODE SELECTED: INT
             // printf("INT\n");
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
+            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+            vTaskDelay(pdMS_TO_TICKS(INTtimeDelay));
             //go from 0 to 90 in LOW SPEED
             for (float i=LEDC_DUTY_MIN; i<= LEDC_DUTY_MAX; i+=STEP_LOW_SPEED) {
                 ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, i);
@@ -312,9 +332,6 @@ void app_main(void)
                 ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
                 vTaskDelay(10 /portTICK_PERIOD_MS);
             }
-            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
-            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-            vTaskDelay(1000 /portTICK_PERIOD_MS); //user selected value
         } else if (modeSel_adc_bits<LOW) {      //2048-3071
             // MODE SELECTED: LOW
             //go from 0 to 90 in LOW SPEED
