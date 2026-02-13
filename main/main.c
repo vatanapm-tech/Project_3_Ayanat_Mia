@@ -37,6 +37,9 @@
 //step sized to change how fast the servo motor rotates
 #define STEP_HIGH_SPEED   6.1 //speed fast -- 90 deg in 0.6 sec
 #define STEP_LOW_SPEED    2.46 //speed slow -- 90 deg in 1.5 sec
+#define MODE_SELECTOR     ADC_CHANNEL_4 //MUST BE ADC CHANNEL -- need to CHANGE!!!
+#define ADC_ATTEN       ADC_ATTEN_DB_12
+#define BITWIDTH        ADC_BITWIDTH_12
 
 bool dseat = false;     // Detects when the driver is seated 
 bool pseat = false;     // Detects when the passenger is seated
