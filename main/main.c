@@ -13,6 +13,8 @@
 #include "freertos/timers.h"
 #include "driver/ledc.h"
 
+//MEGED LCD AND WWSubsystem branches together in main branch - no need to merge anymore
+// TO DO: fix tasks logic & make display work
 
 #define PSEAT_PIN         GPIO_NUM_4       // passenger seat button pin 4
 #define DSEAT_PIN         GPIO_NUM_5       // driver seat button pin 5
