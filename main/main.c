@@ -6,10 +6,12 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "esp_adc/adc_oneshot.h"
 #include "stdio.h"
 #include "esp_adc/adc_cali.h"
 #include "freertos/timers.h"
+#include "driver/ledc.h"
 
 
 #define PSEAT_PIN         GPIO_NUM_4       // passenger seat button pin 4
@@ -24,23 +26,23 @@
 #define BITWIDTH          ADC_BITWIDTH_12  // set ADC bitwidth
 #define DELAY_MS          1000             // delay in milliseconds
 #define DELAY2_MS         2000             // delay in milliseconds
-#define LEDC_TIMER        LEDC_TIMER_0
-#define LEDC_MODE         LEDC_LOW_SPEED_MODE
-#define LEDC_OUTPUT_IO    9
-#define LEDC_CHANNEL      LEDC_CHANNEL_0
-#define LEDC_DUTY_RES     LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
+//LEDC config vars
+#define LEDC_TIMER              LEDC_TIMER_0
+#define LEDC_MODE               LEDC_LOW_SPEED_MODE
+#define LEDC_OUTPUT_IO          (9)
+#define LEDC_CHANNEL            LEDC_CHANNEL_0
+#define LEDC_DUTY_RES           LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
 //PWM signal frequency required by servo motor
-#define LEDC_FREQUENCY    50 // Frequency in Hertz. 50 Hz for a 20ms period.
+#define LEDC_FREQUENCY          (50) // Frequency in Hertz. 50 Hz for a 20ms period.
 //minimum and maximum servo pulse widths
-#define LEDC_DUTY_MIN     220 // Set duty to 2.7% (0 deg angle position)
-#define LEDC_DUTY_MAX     590 // Set duty to 7.2% to achieve an angle of 90% (max)
+#define LEDC_DUTY_MIN           (220) // Set duty to 2.7% (0 deg angle position)
+#define LEDC_DUTY_MAX           (590) // Set duty to 7.2% to achieve an angle of 90% (max)
 //step sized to change how fast the servo motor rotates
-#define STEP_HIGH_SPEED   6.1 //speed fast -- 90 deg in 0.6 sec
-#define STEP_LOW_SPEED    2.46 //speed slow -- 90 deg in 1.5 sec
-#define MODE_SELECTOR     ADC_CHANNEL_4 //MUST BE ADC CHANNEL -- need to CHANGE!!!
-#define DELAY_TIME_SELECTOR     ADC_CHANNEL_3 //MUST BE ADC CHANNEL -- need to CHANGE!!!
-#define ADC_ATTEN       ADC_ATTEN_DB_12
-#define BITWIDTH        ADC_BITWIDTH_12
+#define STEP_HIGH_SPEED      (12.2) //speed fast -- 90 deg in 0.6 sec
+#define STEP_LOW_SPEED       (4.92) //speed slow -- 90 deg in 1.5 sec
+//ADC config vars
+#define MODE_SELECTOR     ADC_CHANNEL_1 //MUST BE ADC CHANNEL
+#define DELAY_TIME_SELECTOR     ADC_CHANNEL_0 //MUST BE ADC CHANNEL
 
 bool dseat = false;     // Detects when the driver is seated 
 bool pseat = false;     // Detects when the passenger is seated
@@ -55,6 +57,15 @@ int error = 0;          // Keep track of error state
 int OFF = 1024;         // WindowWiper Subsystem mode OFF threshold
 int INT = 2048;         // WindowWiper Subsystem mode INT threshold
 int LOW = 3072;         // WindowWiper Subsystem mode LOW threshold
+bool off_selected=false;        // Detects mode of WindowWiper Subsystem selected by driver - OFF
+bool int_selected=false;        // Detects mode of WindowWiper Subsystem selected by driver - INT
+bool low_selected=false;        // Detects mode of WindowWiper Subsystem selected by driver - LOW
+bool high_selected=false;        // Detects mode of WindowWiper Subsystem selected by driver - HIGH
+int timeDelaySel1 = 1365;        // Time Delay for WindowWiper Subsystem threshold 1
+int timeDelaySel2 = 2730;        // Time Delay for WindowWiper Subsystem threshold 2
+int INTtimeDelay;       // delay time for INT mode (ms)
+int mode = 0;           // Keep track of which mode is selected
+int wipers = 0;          // Keep track of whether wipers are on or off
 
 static void ledc_init(void);
 
@@ -131,6 +142,27 @@ void lcd_task(void *pvParameters)
         }
     }
 
+    if (wipers == 0){
+        hd44780_gotoxy(&lcd, 0, 0);
+        hd44780_puts(&lcd, "Wiper mode:");
+        if (mode == 0) {          //0-1023
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "OFF");
+        }
+        if (mode == 1) {   //1024-2047
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "INT");
+        } 
+        if (mode == 2) {   //2048-3071
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "LOW");
+        } 
+        if (mode == 3) {                  //3072-4095
+            hd44780_gotoxy(&lcd, 0, 1);
+            hd44780_puts(&lcd, "HIGH");
+        }
+    }
+
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -175,13 +207,13 @@ void app_main(void)
     // set alarm pin config to output, level 0
     gpio_reset_pin(ALARM_PIN);
     gpio_set_direction(ALARM_PIN, GPIO_MODE_OUTPUT);
-
+    
     // Set the LEDC peripheral configuration
-    example_ledc_init();
-    // Set duty to 3.75% (0 degrees) & Update duty
+    ledc_init();
+    // Set duty to 2.7% (0 degrees) & Update duty
     ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY_MIN);
     ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
-
+    
     // Initalize ADC
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
@@ -193,16 +225,20 @@ void app_main(void)
         .atten = ADC_ATTEN,
         .bitwidth = BITWIDTH
     };
+
     adc_oneshot_config_channel(adc1_handle, MODE_SELECTOR, &chan_config);     // Configure the chan
     adc_oneshot_config_channel(adc1_handle, DELAY_TIME_SELECTOR, &chan_config);     // Configure the chan
-
-    int modeSel_adc_bits;                                   // ADC reading (bits)
-    int delayTimeSel_adc_bits;                               // ADC reading (bits)
-
+    int modeSel_adc_bits;   // ADC reading (bits) for mode selector
+    int delayTimeSel_adc_bits;     // ADC reading (bits) for delay time selector
+    
     while (1){
-
         // Task Delay to prevent watchdog
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(20 / portTICK_PERIOD_MS);
+
+        adc_oneshot_read(adc1_handle, MODE_SELECTOR, &modeSel_adc_bits); // Read ADC bits (mode selector)
+        // adc_cali_raw_to_voltage(adc1_cali_mode_handle, modeSel_adc_bits, &modeSel_adc_bits); // Convert ADC bits to mV (mode selector)
+        adc_oneshot_read(adc1_handle, DELAY_TIME_SELECTOR, &delayTimeSel_adc_bits); // Read ADC bits (delay time selector)
+        // adc_cali_raw_to_voltage(adc1_cali_delay_handle, delayTimeSel_adc_bits, &delayTimeSel_adc_bits); // Convert ADC bits to mV (delay time selector)
 
         // initialize variables in relation to GPIO pin inputs
         dseat = gpio_get_level(DSEAT_PIN)==0;
@@ -210,9 +246,12 @@ void app_main(void)
         dbelt = gpio_get_level(DBELT_PIN)==0;
         pbelt = gpio_get_level(PBELT_PIN)==0;
         ignition = gpio_get_level(IGNITION_BUTTON)==0;
+        off_selected = (modeSel_adc_bits < OFF);     // OFF or engine off
+        int_selected = (modeSel_adc_bits >= OFF && modeSel_adc_bits < INT);
+        low_selected = (modeSel_adc_bits >= INT && modeSel_adc_bits < LOW);
+        high_selected = (modeSel_adc_bits >= LOW);
 
-
-
+        /* ------ Car Alarm Subsystem ------- */
         // if the driver seat button is pressed, print the welcome message once
         if (dseat){
             if (executed == 0){     // if executed equals 0, print welcome message
@@ -291,12 +330,120 @@ void app_main(void)
             xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
         }
 
-        //WINDOW WIPER CONTROL
-        adc_oneshot_read(adc1_handle, MODE_SELECTOR, &modeSel_adc_bits);    // Read ADC bits
-        adc_oneshot_read(adc1_handle, DELAY_TIME_SELECTOR, &delayTimeSel_adc_bits);    // Read ADC bits
-        int INTtimeDelay;
+        /* ------- Window Wiper Subsystem -------- */
+        //determine the delay time selected by driver
+        //0-1364 - 1sec
+        if (delayTimeSel_adc_bits<timeDelaySel1) { INTtimeDelay=1000;} 
+        //1365-2729 - 3 sec
+        else if (delayTimeSel_adc_bits<timeDelaySel2) {INTtimeDelay=3000;} 
+        //2730-4095 -- 5sec
+        else { INTtimeDelay=5000;}
 
-        //determine the delay time selected by driver -- NEEDS IMPROVEMENT!
+        // read from Mode Selector potentiometer & determine the selected mode
+        // OFF or engine off behavior
+        if (off_selected) {
+            if (state == 0) {
+                state = 0;   // already parked
+            } else {
+                state = 4;   // ALWAYS finish cycle and park
+            }
+        }
+        // INT mode
+        else if (int_selected) {
+            if (state == 0) {
+                state = 1;
+                timeInterval = 0;
+            }
+        }
+        // LOW speed mode
+        else if (low_selected) {
+            if (state == 0) {
+                state = 2;
+            }
+        }
+        // HIGH speed mode
+        else if (high_selected) {
+            if (state == 0) {
+                state = 2;
+            }
+        }
+
+        //determine step that we'll use to move wiper up/down
+        if (high_selected) {requested_step = STEP_HIGH_SPEED;} 
+        else {requested_step = STEP_LOW_SPEED; }
+
+        //change states logic
+        switch (state) {
+            case 1:     //wait
+                timeInterval += 20;
+
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+
+                if (timeInterval >= INTtimeDelay && !off_selected) {
+                    state = 2;
+                }
+                break;
+
+            case 2://MOVE FROM 0 to 90
+                duty += current_step;
+                if (duty >= LEDC_DUTY_MAX) {
+                    duty = LEDC_DUTY_MAX;
+                    state = 3;
+                }
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                break;
+
+            case 3: //MOVE FROM 90 to 0
+                duty -= current_step;
+                if (duty <= LEDC_DUTY_MIN) {
+                    duty = LEDC_DUTY_MIN;
+
+                    //switch speeds only after the previous cycle is complete
+                    current_step = requested_step;
+
+                    if (off_selected) {
+                    // if (off_selected || state == 4) {
+                        state = 0;       // park and stop
+                    }
+                    else if (int_selected) {
+                        state = 1;
+                        timeInterval = 0;
+                    }
+                    else {
+                        state = 2;    // continuous LOW/HIGH
+                    }
+                }
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                break;
+
+            case 4: //FINISH CYCLE
+                // always move toward 0°
+                duty -= current_step;
+                if (duty <= LEDC_DUTY_MIN) {
+                    duty = LEDC_DUTY_MIN;
+
+                    //switch speeds only after the previous cycle is complete
+                    current_step = requested_step;
+
+                    state = 0;   // parked
+                }
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, duty);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                break;
+
+            case 0: //STOP
+            default:
+                // parked and stationary
+                ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
+                ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+                break;
+        }
+    
+    /* //OLD VERSION WITH TASKS YOU ADDED
+            //determine the delay time selected by driver -- NEEDS IMPROVEMENT!
         if (delayTimeSel_adc_bits<1365) { //0-1364
             //1 sec
             INTtimeDelay=1000;
@@ -362,6 +509,8 @@ void app_main(void)
                 vTaskDelay(10 /portTICK_PERIOD_MS);
             }
         }
+    */
+
     }
 }
 
