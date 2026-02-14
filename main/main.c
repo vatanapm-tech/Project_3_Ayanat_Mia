@@ -334,11 +334,11 @@ void app_main(void)
 
         /* ------- Window Wiper Subsystem -------- */
         //determine the delay time selected by driver
-        //0-1364 - 1sec
+        //0-1364 - SHORT
         if (delayTimeSel_adc_bits<timeDelaySel1) { INTtimeDelay=1000;} 
-        //1365-2729 - 3 sec
+        //1365-2729 - MEDIUM
         else if (delayTimeSel_adc_bits<timeDelaySel2) {INTtimeDelay=3000;} 
-        //2730-4095 -- 5sec
+        //2730-4095 -- LONG
         else { INTtimeDelay=5000;}
 
         // read from Mode Selector potentiometer & determine the selected mode
