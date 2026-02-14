@@ -1,0 +1,2 @@
+source /Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader/gdbinit/symbols
+source /Users/miavatanapradit/esp/Project_3_Ayanat_Mia/build/bootloader/gdbinit/connect
