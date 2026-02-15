@@ -5,7 +5,7 @@ This project implements a Driver’s Ed Safety Car system that enforces supervis
 ### Design Alternatives:
 For the windshield wiper motor simulation, we selected a position servo motor instead of a continuous servo motor because it provides direct control over the wiper angle using duty cycles, which makes it much easier to meet the requirement of sweeping between fixed positions such as 0 and 90 degrees. Position servos use PWM signals to move to precise angular positions, allowing consistent and repeatable wiper motion, while continuous servos use PWM to control speed and direction rather than position. Since the wiper system only requires a limited and well-defined range of motion rather than unlimited rotation, a continuous servo would add unnecessary complexity and functionality beyond what the design requires.
 ### Starting Repository:
-This system was built from [Mia's repository]([https](https://github.com/skobele28/Skobel-Vatanapradit-Project2))
+This system was built from [Mia's repository](https://github.com/skobele28/Skobel-Vatanapradit-Project2)
 
 ### Summary of Testing results:
 //to add
