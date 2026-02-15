@@ -17,11 +17,14 @@ This system was built from [Mia's repository](https://github.com/skobele28/Skobe
 | The engine stays running regardless of the status of seats and seatbelts. Indication: red LED stays on. | _4 buttons: DS, DB, PS, PB_ <br>1. DS, PS, DB, PB are released | _Test passed_ <br>1. Red LED stays turned on, LCD display message stays on |
 | Turn engine off after previously successfully starting engine | _1 button: Ignition_ <br>1. Ignition button is pressed while the engine is running | _Test passed_ <br>1. Red LED turns off, LCD display message changes to a new corresponding message |
 | Reattempt starting engine after successfully turning it off | Repeat test cases above after successfully turning engine off | _Test passed_ <br>1. Results match their specifications |
+<br>
+
 **Window Wiper Subsystem:**
 | **Specification** | **Test Process** | **Results** |
 |--------------|--------------|---------|
-| Specification | Test Process | Results |
-| Specification | Test Process | Results |
-| Specification | Test Process | Results |
-| Specification | Test Process | Results |
-| Specification | Test Process | Results |
+| Subsystem only works while the engine is running; window wiper motor returns to start position when engine is turned off | _2 potentiometers: Mode selector, Time Delay selector_ <br>1. Select mode other than OFF while engine is running<br>2. Select mode other than OFF while engine is off | _All tests passed_<br>1. Window wiper motor rotates according to mode, LCD display message changes accordingly<br>2. If window wiper motor was previously rotating, it finishes the cycle and returns to initial position at 0°; otherwise remains at 0° |
+| When the subsystem is set to OFF mode, the window wiper motor returns or remains at an initial position of 0° | _1 potentiometer: Mode selector_<br>1. Select mode OFF while window wiper motor is rotating<br>2. Select mode OFF while window wiper motor is stationary | _All tests passed_ <br>1. Finish current cycle and return to initial position, LCD display shows corresponding message<br>2. Remain stationary at initial position, LCD display shows corresponding message |
+| When the subsystem is set to LOW mode, the window wiper motor rotates 90° at 10 rpm | _1 potentiometer: Mode selector_<br>1. Select mode LOW | _Test passed_<br>1. Window wiper motor rotates from 0° to 90° and back at 10 rpm with no delays, LCD display shows this information |
+| When the subsystem is set to HIGH mode, the window wiper motor rotates 90° at 25 rpm | _1 potentiometer: Mode selector_<br>1. Select mode HIGH | _Test passed_<br>1. Window wiper motor rotates from 0° to 90° and back at 25 rpm with no delays, LCD display shows this information |
+| When the subsystem is set to INT mode, the window wiper motor rotates at LOW speed, hesitating for a driver-selected delay time before resuming motion | _2 potentiometers: Mode selector, Time Delay selector_ <br>1. Select INT + short delay<br>2. Select INT + medium delay<br>3. Select INT + long delay | _All tests passed_ <br>1. Rotates 0°→90°→0° at 10 rpm with 1s delay, LCD displays this<br>2. Rotates 0°→90°→0° at 10 rpm with 3s delay, LCD displays this<br>3. Rotates 0°→90°→0° at 10 rpm with 5s delay, LCD displays this |
+
