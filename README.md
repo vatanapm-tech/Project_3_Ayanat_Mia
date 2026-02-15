@@ -8,4 +8,20 @@ For the windshield wiper motor simulation, we selected a position servo motor in
 This system was built from [Mia's repository](https://github.com/skobele28/Skobel-Vatanapradit-Project2)
 
 ### Summary of Testing results:
-//to add
+**Ignition Subsystem:**
+| **Specification** | **Test Process** | **Results** |
+|--------------|--------------|---------|
+| When the driver is seated, the system is initiated and a welcome message displays. | _1 button: DS_ <br> 1. DS pressed <br> 2. DS and any other buttons (PS, DB, PB) are pressed <br>3. PS, DB, PB are pressed | _All tests passed_ <br>1. Welcome message appears on monitor<br>2. Nothing happens<br>3. Nothing happens |
+| Ignition is enabled when both seats are occupied (DS, PS) and both seat belts are fastened (DB, PB). Green LED turns on if ignition is enabled successfully. | _4 buttons: DS, DB, PS, PB_<br>1. DS, PS, DB, PB are pressed simultaneously<br>2. Any combination of DS, PS, DB, PB are pressed simultaneously | _All tests passed_<br>1. Green LED turns on<br>2. Green LED stays turned off |
+| Start engine (turn off green LED, turn on red LED) after ignition is enabled (green LED on) and ignition button is pressed (before button released). If ignition is not enabled, trigger a sound alarm. | _1 button: Ignition_<br>1. Ignition button is pressed when ignition enabled (green LED turned on)<br>2. Ignition button is pressed when ignition not enabled (green LED not turned on) | _All tests passed_<br>1. Green LED turns off, red LED turns on, LCD displays corresponding message<br>2. Sound alarm triggered, serial monitor displays errors (DS, PS not occupied, DB, PB not fastened – in any combination) |
+| The engine stays running regardless of the status of seats and seatbelts. Indication: red LED stays on. | _4 buttons: DS, DB, PS, PB_ <br>1. DS, PS, DB, PB are released | _Test passed_ <br>1. Red LED stays turned on, LCD display message stays on |
+| Turn engine off after previously successfully starting engine | _1 button: Ignition_ <br>1. Ignition button is pressed while the engine is running | _Test passed_ <br>1. Red LED turns off, LCD display message changes to a new corresponding message |
+| Reattempt starting engine after successfully turning it off | Repeat test cases above after successfully turning engine off | _Test passed_ <br>1. Results match their specifications |
+**Window Wiper Subsystem:**
+| **Specification** | **Test Process** | **Results** |
+|--------------|--------------|---------|
+| Specification | Test Process | Results |
+| Specification | Test Process | Results |
+| Specification | Test Process | Results |
+| Specification | Test Process | Results |
+| Specification | Test Process | Results |
